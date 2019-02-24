@@ -5,7 +5,7 @@
 void rawmode(){
     struct termios raw;
     tcgetattr(STDIN_FILENO, &raw);
-    raw.c_lflag &- ~(ECHO);
+    raw.c_lflag &= ~(ECHO);
     tcsetattr(STDIN_FILENO,TCSAFLUSH, &raw);
 }
 int main(){
