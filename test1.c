@@ -4,11 +4,18 @@
 #include <termios.h>
 #include <stdlib.h>
 #include <errno.h>
+#include <sys/ioctl.h>
 
 #define CTRL_KEY(k) ((k)&0x1F)
 
 /* data*/
-struct termios orig_termios;
+struct editorConfig {
+	int screenrows;
+	int screencols;
+	struct termios orig_termios;
+};
+
+struct editorConfig E;
 
 /*for terminal*/
 void die(const char*s){
@@ -18,16 +25,16 @@ void die(const char*s){
 	exit(1);
 }
 void noRawMode(){
-    if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &orig_termios)==-1)
+    if(tcsetattr(STDIN_FILENO, TCSAFLUSH, &E.orig_termios)==-1)
 		die("tcsetattr");
 }
 
 void rawMode(){
-    if(tcgetattr(STDIN_FILENO, &orig_termios) == -1)
+    if(tcgetattr(STDIN_FILENO, &E.orig_termios) == -1)
 		die("tcgetattr");
     atexit(noRawMode);
     
-    struct termios raw = orig_termios;
+    struct termios raw = E.orig_termios;
 	raw.c_iflag &= ~(ICRNL | IXON | BRKINT | INPCK | ISTRIP);
 	raw.c_oflag &= ~(OPOST);
 	raw.c_cflag |= (CS8);
@@ -49,13 +56,38 @@ char readKey() {
 	return c;
 }
 
+int getWindowSize(int *rows, int *cols) {
+	struct winsize ws;
+	
+	if(1 || ioctl(STDOUT_FILENO, TIOCGWINSZ, &ws) == -1 || ws.ws_col ==0) {
+		if(write(STDOUT_FILENO,"\x1b[999C\x1b[999B", 12) != 12) return -1;
+		readKey();
+		return -1;
+	}
+	else {
+		*cols = ws.ws_col;
+		*rows = ws.ws_row;
+		return 0;
+	}
+}
+
 
 /*for output*/
+void drawRows(){
+	int y;
+	for (y=0;y<E.screenrows;y++) {
+		write(STDOUT_FILENO, "~\r\n", 3);
+	}
+}
+
 void refreshScreen() {
 	write(STDOUT_FILENO, "\x1b[2J", 4);
 	write(STDOUT_FILENO, "\x1b[H", 3);
-}
 	
+	drawRows();
+	write(STDOUT_FILENO,  "\x1b[H",3);
+}
+
 
 /*for input*/
 void processKeys() {
@@ -71,8 +103,13 @@ void processKeys() {
 }
 
 /*init*/
+void initEditor() {
+	if(getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
+}
+
 int main(){
     rawMode();
+    initEditor();
 	while(1) {
 		refreshScreen();
 		processKeys();
