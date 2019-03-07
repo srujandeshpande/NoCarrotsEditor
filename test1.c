@@ -10,7 +10,7 @@
 #define VERSION "0.1.47"
 #define CTRL_KEY(k) ((k)&0x1F)
 enum editorKey {
-	ARROW_LEFT = 'a', ARROW_RIGHT = 'd', ARROW_UP = 'w', ARROW_DOWN = 's'};
+	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN};
 
 /* data*/
 struct editorConfig {
@@ -52,7 +52,7 @@ void rawMode(){
 		die("tcsetattr");
 }
 
-char readKey() {
+int readKey() {
 	int n;
 	char c;
 	while (n = read(STDIN_FILENO, &c, 1)!=1) {
@@ -183,7 +183,7 @@ void refreshScreen() {
 
 /*for input*/
 
-void moveCursor(char key) {
+void moveCursor(int key) {
 	switch(key) {
 		case ARROW_LEFT: E.cx--; break;
 		case ARROW_RIGHT: E.cx++; break;
@@ -193,7 +193,7 @@ void moveCursor(char key) {
 }
 
 void processKeys() {
-	char c = readKey();
+	int c = readKey();
 	
 	switch (c) {
 		case CTRL_KEY('q'):
