@@ -6,18 +6,27 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <sys/types.h>
 
 #define VERSION "0.1.47"
 #define CTRL_KEY(k) ((k)&0x1F)
+
 enum editorKey {
 	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY, END_KEY,
 	  PAGE_UP, PAGE_DOWN};
 
 /* data*/
+typedef struct erow {
+	int size;
+	char *chars;
+} erow;
+
 struct editorConfig {
 	int cx,cy;
 	int screenrows;
 	int screencols;
+	int numrows;
+	erow row;
 	struct termios orig_termios;
 };
 
@@ -138,6 +147,20 @@ int getWindowSize(int *rows, int *cols) {
 	}
 }
 
+/*file io*/
+void editorOpen() {
+	char *line = "Hello,World!";
+	ssize_t linelen = 13;
+	
+	E.row.size = linelen;
+	E.row.chars = malloc(linelen +1);
+	memcpy(E.row.chars, line, linelen);
+	E.row.chars[linelen] = '\0';
+	E.numrows = 1;
+}
+
+
+
 /*append buffer*/
 
 struct abuf {
@@ -164,20 +187,27 @@ void abFree(struct abuf *ab) {
 void drawRows(struct abuf *ab){
 	int y;
 	for (y=0;y<E.screenrows;y++) {
-		if(y == E.screenrows/3) {
-			char welcome[80];
-			int welcomelen = snprintf(welcome,sizeof(welcome),"EditIT -- Version %s",VERSION);
-			if(welcomelen>E.screencols) welcomelen = E.screencols;
-			int padding = (E.screencols - welcomelen)/2;
-			if(padding) {
-				abAppend(ab, "~", 1);
-				padding--;
+		if (y >= E.numrows) {
+			if(y == E.screenrows/3) {
+				char welcome[80];
+				int welcomelen = snprintf(welcome,sizeof(welcome),"EditIT -- Version %s",VERSION);
+				if(welcomelen>E.screencols) welcomelen = E.screencols;
+				int padding = (E.screencols - welcomelen)/2;
+				if(padding) {
+					abAppend(ab, "~", 1);
+					padding--;
+				}
+				while(padding--) abAppend(ab, " ", 1);
+				abAppend(ab, welcome, welcomelen);
 			}
-			while(padding--) abAppend(ab, " ", 1);
-			abAppend(ab, welcome, welcomelen);
+			else {
+				abAppend(ab, "~", 1);
+			}
 		}
 		else {
-			abAppend(ab, "~", 1);
+			int len = E.row.size;
+			if (len >E.screencols) len = E.screencols;
+			abAppend(ab, E.row.chars, len);
 		}
 		abAppend(ab, "\x1b[K", 3);
 		if(y<E.screenrows -1) {
@@ -258,12 +288,14 @@ void processKeys() {
 void initEditor() {
 	E.cx = 0;
 	E.cy = 0;
+	E.numrows = 0;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
 
 int main(){
     rawMode();
     initEditor();
+    editorOpen();
 	while(1) {
 		refreshScreen();
 		processKeys();
