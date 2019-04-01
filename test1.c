@@ -32,6 +32,7 @@ typedef struct erow {
 
 struct editorConfig {
 	int cx,cy;
+	int rx;
 	int rowoff;
 	int coloff;
 	int screenrows;
@@ -240,17 +241,19 @@ void abFree(struct abuf *ab) {
 
 /*for output*/
 void editorScroll() {
+	E.rx = E.cx;
+	
  	if (E.cy < E.rowoff) {
     	E.rowoff = E.cy;
   	}
   	if (E.cy >= E.rowoff + E.screenrows) {
    		E.rowoff = E.cy - E.screenrows + 1;
   	}
-  	if (E.cx < E.coloff) {
-    	E.coloff = E.cx;
+  	if (E.rx < E.coloff) {
+    	E.coloff = E.rx;
   	}
-  	if (E.cx >= E.coloff + E.screencols) {
-    	E.coloff = E.cx - E.screencols + 1;
+  	if (E.rx >= E.coloff + E.screencols) {
+    	E.coloff = E.rx - E.screencols + 1;
   	}
 }
 
@@ -298,7 +301,7 @@ void refreshScreen() {
 	drawRows(&ab);
 	
 	char buf[32];
-	snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy-E.rowoff)+1, (E.cx-E.coloff)+1);
+	snprintf(buf, sizeof(buf), "\x1b[%d;%dH", (E.cy-E.rowoff)+1, (E.rx-E.coloff)+1);
 	abAppend(&ab, buf, strlen(buf));
 	
 	abAppend(&ab, "\x1b[?25h",6);
@@ -377,6 +380,7 @@ void processKeys() {
 void initEditor() {
 	E.cx = 0;
 	E.cy = 0;
+	E.rx = 0;
 	E.rowoff = 0;
 	E.coloff = 0;
 	E.numrows = 0;
