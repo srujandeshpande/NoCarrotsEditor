@@ -1,3 +1,7 @@
+#define _DEFAULT_SOURCE
+#define _BSD_SOURCE
+#define _GNU SOURCE
+
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
@@ -8,7 +12,9 @@
 #include <string.h>
 #include <sys/types.h>
 
-#define VERSION "0.1.47"
+
+
+#define VERSION "0.1.58"
 #define CTRL_KEY(k) ((k)&0x1F)
 
 enum editorKey {
@@ -26,7 +32,7 @@ struct editorConfig {
 	int screenrows;
 	int screencols;
 	int numrows;
-	erow row;
+	erow *row;
 	struct termios orig_termios;
 };
 
@@ -199,7 +205,7 @@ void drawRows(struct abuf *ab){
 	int y;
 	for (y=0;y<E.screenrows;y++) {
 		if (y >= E.numrows) {
-			if(y == E.screenrows/3) {
+			if(E.numrows == 0 && y == E.screenrows/3) {
 				char welcome[80];
 				int welcomelen = snprintf(welcome,sizeof(welcome),"EditIT -- Version %s",VERSION);
 				if(welcomelen>E.screencols) welcomelen = E.screencols;
@@ -300,6 +306,7 @@ void initEditor() {
 	E.cx = 0;
 	E.cy = 0;
 	E.numrows = 0;
+	E.row = NULL;
 	if(getWindowSize(&E.screenrows, &E.screencols) == -1) die("getWindowSize");
 }
 
