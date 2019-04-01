@@ -10,7 +10,8 @@
 #define VERSION "0.1.47"
 #define CTRL_KEY(k) ((k)&0x1F)
 enum editorKey {
-	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN,  PAGE_UP, PAGE_DOWN};
+	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, HOME_KEY, END_KEY,
+	  PAGE_UP, PAGE_DOWN};
 
 /* data*/
 struct editorConfig {
@@ -71,8 +72,12 @@ int readKey() {
 				if(read(STDIN_FILENO, &seq[2], 1) != 1) return '\x1b';
 				if(seq[2] == '~') {
 					switch(seq[1]) {
+						case 1: return HOME_KEY;
+						case 2: return END_KEY;
 						case 5: return PAGE_UP;
 						case 6: return PAGE_DOWN;
+						case 7: return HOME_KEY;
+						case 8: return END_KEY;
 					}
 				}
 			}
@@ -82,10 +87,17 @@ int readKey() {
 					case 'B': return ARROW_DOWN;
 					case 'C': return ARROW_RIGHT;
 					case 'D': return ARROW_LEFT;
+					case 'H': return HOME_KEY;
+					case 'F': return END_KEY;
 				}
 			}
+		} 
+		else if (seq[0] == '0') {
+			switch(seq[1]) {
+				case 'H': return HOME_KEY;
+				case 'F': return END_KEY;
 		}
-		
+		}
 		return '\x1b';
 	}
 	else {
