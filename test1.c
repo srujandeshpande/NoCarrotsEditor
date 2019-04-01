@@ -160,6 +160,18 @@ int getWindowSize(int *rows, int *cols) {
 }
 
 /*row operations*/
+int editorRowCxToRx(erow *row, int cx) {
+	int rx = 0;
+	int j;
+	for (j = 0; j < cx; j++) {
+		if (row->chars[j] == '\t')
+			rx += (TAB_STOP - 1) - (rx % TAB_STOP);
+		rx++;
+	}
+	return rx;
+}
+
+
 void editorUpdateRow(erow *row) {
 	int tabs = 0;
 	int j;
@@ -241,8 +253,10 @@ void abFree(struct abuf *ab) {
 
 /*for output*/
 void editorScroll() {
-	E.rx = E.cx;
-	
+	E.rx = 0;
+	if(E.cy < E.numrows) {
+		E.rx = editorRowCxToRx(&E.row[E.cy], E.cx);
+	}
  	if (E.cy < E.rowoff) {
     	E.rowoff = E.cy;
   	}
