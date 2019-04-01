@@ -10,7 +10,7 @@
 #define VERSION "0.1.47"
 #define CTRL_KEY(k) ((k)&0x1F)
 enum editorKey {
-	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, HOME_KEY, END_KEY,
+	ARROW_LEFT = 1000, ARROW_RIGHT, ARROW_UP, ARROW_DOWN, DEL_KEY, HOME_KEY, END_KEY,
 	  PAGE_UP, PAGE_DOWN};
 
 /* data*/
@@ -74,6 +74,7 @@ int readKey() {
 					switch(seq[1]) {
 						case 1: return HOME_KEY;
 						case 2: return END_KEY;
+						case 3: return DEL_KEY;
 						case 5: return PAGE_UP;
 						case 6: return PAGE_DOWN;
 						case 7: return HOME_KEY;
@@ -105,7 +106,7 @@ int readKey() {
 	}
 }
 
-int getCursorPosition(int *rows, int *cols) {
+int getCursorPosition(int *rows, int *cols) { 
  	char buf[32];
 	unsigned int i = 0;
 	
@@ -231,6 +232,12 @@ void processKeys() {
 			write(STDOUT_FILENO, "\x1b[2J", 4);
 			write(STDOUT_FILENO, "\x1b[H", 3);
 			exit(0);
+			break;
+		case HOME_KEY:
+			E.cx = 0;
+			break;
+		case END_KEY:
+			E.cx = E.screencols -1;
 			break;
 		case PAGE_UP: 
 		case PAGE_DOWN:{
